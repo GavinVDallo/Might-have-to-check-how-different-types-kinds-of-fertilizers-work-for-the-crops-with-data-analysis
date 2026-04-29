@@ -1,0 +1,68 @@
+---
+title: "Fertilizer Data Analysis"
+output: html_document
+date: "2026-04-29"
+---
+
+```{r setup, include=FALSE}
+# Load necessary libraries
+library(tidyverse)
+library(knitr)
+library(ggpubr)
+```
+
+## 1. Data Preparation
+We are organizing the dataset into a "long format" where each row represents one sample.
+
+```{r data}
+yield_data <- data.frame(
+  Fertilizer = factor(rep(c("X", "Y", "Z"), each = 20)),
+  Crop = factor(rep(rep(c("Wheat", "Corn", "Soy", "Rice"), each = 5), 3)),
+  Yield = c(
+    # Blend X
+    123, 156, 112, 100, 168, 128, 150, 174, 116, 109, 166, 178, 187, 153, 195, 151, 125, 117, 155, 158,
+    # Blend Y
+    135, 130, 176, 120, 155, 175, 132, 120, 187, 184, 140, 145, 159, 131, 126, 167, 183, 142, 167, 168,
+    # Blend Z
+    156, 180, 147, 146, 193, 186, 138, 178, 176, 190, 185, 206, 188, 165, 188, 175, 173, 154, 191, 169
+  )
+)
+```
+
+## 2. Descriptive Statistics
+Below are the mean yields and standard deviations for each treatment group.
+
+```{r descriptives}
+descriptive_stats <- yield_data %>%
+  group_by(Fertilizer, Crop) %>%
+  summarise(
+    Mean = mean(Yield),
+    SD = sd(Yield),
+    n = n(),
+    .groups = 'drop'
+  )
+
+kable(descriptive_stats, caption = "Table 1: Descriptive Statistics by Group")
+```
+
+## 3. Two-Way ANOVA Results
+We are testing the effect of Fertilizer, Crop, and their Interaction on Yield.
+
+```{r anova}
+# Run the ANOVA model
+model <- aov(Yield ~ Fertilizer * Crop, data = yield_data)
+
+# Display the ANOVA table
+summary(model)
+```
+
+## 4. Interaction Plot
+Visualizing how the performance of each fertilizer changes depending on the crop.
+
+```{r interaction_plot, fig.width=8, fig.height=5}
+ggline(yield_data, x = "Crop", y = "Yield", color = "Fertilizer",
+       add = "mean_se",
+       palette = "Set1",
+       title = "Mean Yield by Fertilizer and Crop",
+       xlab = "Crop Type", ylab = "Mean Yield (+/- SE)")
+```
